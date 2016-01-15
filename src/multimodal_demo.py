@@ -1,12 +1,12 @@
 import pandasga as pdga
 import matplotlib.pyplot as plt
 import numpy as np
-import math
+import math, time
 
 n_bits=24
 
 def function_z(y):
-    return math.exp(-4*y) * math.sin(6*math.pi*y)
+    return math.exp(-3*y)*math.sin(6*math.pi*y)**2
 
 Y = np.linspace(0, 1, 1001)
 Z = np.vectorize(function_z)(Y)
@@ -43,7 +43,7 @@ def plot_population(population):
     ax3.set_ylabel('z')
          
     plt.draw()
-#     time.sleep(0.05)
+    time.sleep(0.05)
 
 u = pdga.genotype.BinarySegment(name='u', number_of_bits=8)
 x = pdga.genotype.BinarySegment(name='x', number_of_bits=n_bits)
@@ -51,31 +51,43 @@ x = pdga.genotype.BinarySegment(name='x', number_of_bits=n_bits)
 y = pdga.core.TransformationColumn(name='y',
                                    function = lambda columns: columns['x'] / ((2**n_bits) -1))
                                 
-z = pdga.core.OptimizationObjective(name='z', \
-                          function=lambda (columns): columns['y'].apply(function_z), \
+z = pdga.core.OptimizationObjective(name='z',
+                          function=lambda (columns): columns['y'].apply(function_z),
                           maximization_flag=True)
 
-sl = pdga.selection.SelectWorstNLethals()
-sm = pdga.selection.KTournamentSelection(tournament_size=2)
+sl = pdga.multimodal.SelectWorstNLethals(column='z_sh',
+                                         maximization_flag=True)
+sm = pdga.multimodal.StochasticUniformSelection(column='z_sh',
+                                          maximization_flag=True)
 c = pdga.operators.Crossover(crossover_probability=1.0)
 m = pdga.operators.Mutation(mutation_probability=0.5)
 d = pdga.operators.Decode()
-e = pdga.operators.Evaluation()
+
+sh = pdga.multimodal.NicheSharingCoefficient(name='sh',
+                                             distance_function=pdga.multimodal.phenotype_distance,
+                                             sharing_function=pdga.multimodal.new_linear_decay_sharing(radius = 0.1))
+
+e = pdga.multimodal.MultimodalEvaluation(sharing_column='sh',
+                                         target_column='z',
+                                         output_column='z_sh')
 l = pdga.operators.LogBest()
-p = pdga.operators.PeriodicOperator(generation_frequency=1, iteration_callback=plot_population)
+p = pdga.operators.PeriodicOperator(generation_frequency=1,
+                                    iteration_callback=plot_population)
+
+
 pop = pdga.population.Population(
           segments=[u, x],
           targets=[z],
           phenotype=[y],
           population_size=100,
-          generation_size=5)
+          generation_size=50)
  
 ga = pdga.core.Scheduler(name='test',
                 population=pop,
-                operators=[sl, sm, c, m, d, e, l, p])
+                operators=[sl, sm, c, m, d, sh, e, l, p])
  
 plt.ion()
 plt.show()
 
-ga.run_ga(150)
+ga.run_ga(100)
 print pop
