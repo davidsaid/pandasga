@@ -6,7 +6,7 @@ import math
 n_bits=24
 
 def function_z(y):
-    return math.exp(-4*y) * math.sin(6*math.pi*y)
+    return math.exp(-3*y) * math.sin(12*math.pi*y)
 
 Y = np.linspace(0, 1, 1001)
 Z = np.vectorize(function_z)(Y)
@@ -37,7 +37,7 @@ def plot_population(population):
     ax2.set_xlim([best_x-0.5*window_size, best_x+0.5*window_size])
     ax2.set_ylim([best_z-0.5*window_size, best_z+0.5*window_size])
     
-    ax3.plot(population.best_log['z'], 'k-')
+    ax3.plot(population.best_log.index, population.best_log['z'], 'k-')
     ax3.set_title('best found so far')
     ax3.set_xlabel('evaluations')
     ax3.set_ylabel('z')
@@ -47,32 +47,27 @@ def plot_population(population):
 
 u = pdga.genotype.BinarySegment(name='u', number_of_bits=8)
 x = pdga.genotype.BinarySegment(name='x', number_of_bits=n_bits)
-
-y = pdga.core.TransformationColumn(name='y',
-                                   function = lambda columns: columns['x'] / ((2**n_bits) -1))
-                                
-z = pdga.core.OptimizationObjective(name='z', \
-                          function=lambda (columns): columns['y'].apply(function_z), \
-                          maximization_flag=True)
-
-sl = pdga.selection.SelectWorstNLethals()
-sm = pdga.selection.KTournamentSelection(tournament_size=2)
+y = pdga.transformations.LinearMapping(name='y', genotype_column=x)
+z = pdga.core.EvaluationColumn(
+        pdga.transformations.ColumnFunction(name='z',
+                                            columns=['y'],
+                                            function=function_z))
+sl = pdga.selection.SelectWorstNLethals(column='z')
+sm = pdga.selection.KTournamentSelection(column='z', tournament_size=2)
 c = pdga.operators.Crossover(crossover_probability=1.0)
 m = pdga.operators.Mutation(mutation_probability=0.5)
-d = pdga.operators.Decode()
-e = pdga.operators.Evaluation()
-l = pdga.operators.LogBest()
+d = pdga.operators.DecodeAndEvaluate()
+l = pdga.operators.LogBest(column='z')
 p = pdga.operators.PeriodicOperator(generation_frequency=1, iteration_callback=plot_population)
 pop = pdga.population.Population(
           segments=[u, x],
-          targets=[z],
-          phenotype=[y],
+          phenotype=[y, z],
           population_size=100,
-          generation_size=5)
+          generation_size=50)
  
 ga = pdga.core.Scheduler(name='test',
                 population=pop,
-                operators=[sl, sm, c, m, d, e, l, p])
+                operators=[sl, sm, c, m, d, l, p])
  
 plt.ion()
 plt.show()

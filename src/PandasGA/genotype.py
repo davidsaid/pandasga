@@ -1,16 +1,16 @@
-from core import Column
+from core import GABaseObject
 
 import numpy as np
 
-class BinarySegment(Column):
-    def __init__(self,\
-                 name,\
-                 number_of_bits,\
+class BinarySegment(GABaseObject):
+    def __init__(self,
+                 name,
+                 number_of_bits,
                  formatter=None):
         self.number_of_bits = number_of_bits
         if formatter is None:
             formatter = lambda x : self.to_binary(x)
-        super(BinarySegment, self).__init__(name=name,\
+        super(BinarySegment, self).__init__(name=name,
                                         formatter=formatter)
         
     def to_binary(self, x):
@@ -31,3 +31,6 @@ class BinarySegment(Column):
     
     def random_value(self):
         return np.random.randint(2**self.number_of_bits)
+    
+    def max_value(self):
+        return 2**self.number_of_bits -1

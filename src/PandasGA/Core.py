@@ -24,23 +24,24 @@ class GeneticOperator(GABaseObject):
     def finalize(self, population):
         pass
 
-class Column(GABaseObject):
-    def __init__(self, name, formatter=str):
-        self.name = name
-        self.formatter = formatter
-
-class TransformationColumn(Column):
+class TransformationColumn(GABaseObject):
     def __init__(self,name, function, formatter=str):
         self.function = function
-        super(TransformationColumn, self).__init__(name=name,\
-                                formatter=formatter)
-        
-class OptimizationObjective(TransformationColumn):
-    def __init__(self, name, function, maximization_flag, formatter=str):
-        super(OptimizationObjective, self).__init__(name=name,\
-                                                    function=function,\
-                                                    formatter=formatter)
-        self.maximization_flag = maximization_flag
+        self.name = name
+        self.formatter = formatter
+    
+    def evaluate(self, population):
+        population.individuals[self.name] = \
+            self.function(population)
+
+class EvaluationColumn(TransformationColumn):
+    def __init__(self,
+                 column):
+        self.column = column
+    
+    def evaluate(self, population):
+        self.column.evaluate(population)
+        population.evaluation_counter += len(population)
 
 class Scheduler(GABaseObject):
     def __init__(self, \

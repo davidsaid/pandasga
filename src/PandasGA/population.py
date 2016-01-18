@@ -2,18 +2,16 @@ import numpy as np
 import pandas as pd
 
 class Population(object):
-    def __init__(self, \
-                 segments, \
-                 targets, \
-                 phenotype=[], \
-                 population_size=100, \
+    def __init__(self, 
+                 segments, 
+                 phenotype=[], 
+                 population_size=100, 
                  individuals=None,
-                 generation_size=None, \
-                 generation_counter=0, \
-                 evaluation_counter=0,\
+                 generation_size=None, 
+                 generation_counter=0, 
+                 evaluation_counter=0,
                  best_log=None):
         self.segments = segments
-        self.targets = targets
         self.phenotype = phenotype
         self.generation_counter = generation_counter
         self.evaluation_counter = evaluation_counter
@@ -44,23 +42,24 @@ class Population(object):
         formatters = {}
         for segment in self.segments:
             formatters[segment.name] = segment.formatter
-            
-        for target in self.targets:
-            formatters[target.name] = target.formatter
         
-        return '\n'.join([\
-            'segments: ' + str(self.segments), \
-            'targets: ' + str(self.targets), \
-            'phenotype ' + str(self.phenotype), \
-            'generation_size: ' + str(self.generation_size), \
-            'evaluation_counter: ' + str(self.evaluation_counter), \
-            'generation_counter: ' + str(self.generation_counter), \
-            'lethal_list: ' + str(self.lethal_list), \
-            'survivor_list: ' + str(self.survivor_list), \
-            'mating_pool: ' + str(self.mating_pool), \
-            'Individuals:\n' + self.individuals.to_string(formatters=formatters),\
-            'Best log:\n' + self.best_log.to_string(formatters=formatters)])
-                
+        return '\n'.join([
+            'segments: ' + str(self.segments), 
+            'phenotype ' + str(self.phenotype), 
+            'generation_size: ' + str(self.generation_size), 
+            'evaluation_counter: ' + str(self.evaluation_counter), 
+            'generation_counter: ' + str(self.generation_counter), 
+            'lethal_list: ' + str(self.lethal_list), 
+            'survivor_list: ' + str(self.survivor_list), 
+            'mating_pool: ' + str(self.mating_pool), 
+            'Individuals:\n' + self.dataframe_to_string(self.individuals, formatters),
+            'Best log:\n' + self.dataframe_to_string(self.best_log, formatters=formatters)])
+        
+    def dataframe_to_string(self, df, formatters=[]):
+        if df is None:
+            return 'None'
+        return df.to_string(formatters=formatters)
+        
     def __repr__(self):
         return str(self)
     

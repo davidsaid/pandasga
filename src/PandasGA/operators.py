@@ -3,16 +3,10 @@ from core import GeneticOperator
 import numpy as np
 import pandas as pd
 
-class Transformation(GeneticOperator):
-    def get_column_descriptors(self, population):
-        raise NotImplemented('This is an abstract method that needs to be implemented by sub-classes')
-    
+class DecodeAndEvaluate(GeneticOperator):
     def apply(self, population):
-        individuals = population.individuals
-        for column in self.get_column_descriptors(population):
-            individuals.loc[population.lethal_list, column.name] = \
-                column.function(individuals.loc[population.lethal_list])
-        population.evaluation_counter += len(population.lethal_list)
+        for column in population.phenotype:
+            column.evaluate(population)
     
     def iterate(self, population):
         self.apply(population)
@@ -20,16 +14,8 @@ class Transformation(GeneticOperator):
     def initialize(self, population):
         self.apply(population)
 
-class Evaluation(Transformation):
-    def get_column_descriptors(self, population):
-        return population.targets
-
-class Decode(Transformation):
-    def get_column_descriptors(self, population):
-        return population.phenotype
-
 class Crossover(GeneticOperator):
-    def __init__(self, \
+    def __init__(self,
                  crossover_probability):
         self.crossover_probability = crossover_probability
     
@@ -52,7 +38,7 @@ class Crossover(GeneticOperator):
         population.individuals.loc[population.lethal_list] = offspring
     
 class Mutation(GeneticOperator):
-    def __init__(self, \
+    def __init__(self,
                  mutation_probability):
         self.mutation_probability = mutation_probability
     
@@ -64,15 +50,15 @@ class Mutation(GeneticOperator):
                     individuals.set_value(i, segment.name, segment.mutate(row[segment.name]))
                     
 class PeriodicOperator(GeneticOperator):
-    def __init__(self,\
-                 generation_frequency=1,\
-                 iteration_callback=None,\
-                 evaluation_frequency=None,\
+    def __init__(self,
+                 generation_frequency=1,
+                 iteration_callback=None,
+                 evaluation_frequency=None,
                  evaluation_callback=None):
         self.generation_frequency = generation_frequency
         self.iteration_callback = iteration_callback
         self.evaluation_frequency = evaluation_frequency
-        self.evaluation_callback=evaluation_callback
+        self.evaluation_callback = evaluation_callback
     
     def should_trigger(self, counter, frequency):
         if frequency:
@@ -80,28 +66,38 @@ class PeriodicOperator(GeneticOperator):
         return False
     
     def iterate(self, population):
-        if self.should_trigger(population.generation_counter, self.generation_frequency)\
+        if self.should_trigger(population.generation_counter, self.generation_frequency) \
                 and self.iteration_callback is not None:
             self.iteration_callback(population)
-        if self.should_trigger(population.evaluation_counter, self.evaluation_frequency)\
+        if self.should_trigger(population.evaluation_counter, self.evaluation_frequency) \
                 and self.evaluation_callback is not None:
             self.evaluation_callback(population)
 
 class LogBest(PeriodicOperator):
-    def __init__(self, 
-        generation_frequency=None, 
-        iteration_callback=None, 
-        evaluation_frequency=1, 
+    def __init__(self,
+        column,
+        maximize=True,
+        generation_frequency=None,
+        iteration_callback=None,
+        evaluation_frequency=1,
         evaluation_callback=None):
         PeriodicOperator.__init__(self, generation_frequency=generation_frequency, iteration_callback=iteration_callback, evaluation_frequency=evaluation_frequency, evaluation_callback=evaluation_callback)
+        self.column = column
+        self.maximize = maximize
         ul = lambda pop: self.update_log(pop)
         self.iteration_callback = ul
         self.evaluation_callback = ul
         
     def update_log(self, population):
-        best_index = population.survivor_list[-1]
+        best_index = self.get_best_index(population)
         best = population.individuals.loc[best_index]
         if population.best_log is None:
             population.best_log = pd.DataFrame(columns=population.individuals.columns)
         
         population.best_log.loc[population.evaluation_counter] = best
+
+    def get_best_index(self, population):
+        if self.maximize:
+            return population.individuals[self.column].idxmax()
+        else:
+            return population.individuals[self.column].idxmin()
