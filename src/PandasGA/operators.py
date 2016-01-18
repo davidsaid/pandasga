@@ -80,21 +80,29 @@ class LogBest(PeriodicOperator):
         generation_frequency=None,
         iteration_callback=None,
         evaluation_frequency=1,
-        evaluation_callback=None):
-        PeriodicOperator.__init__(self, generation_frequency=generation_frequency, iteration_callback=iteration_callback, evaluation_frequency=evaluation_frequency, evaluation_callback=evaluation_callback)
+        evaluation_callback=None,
+        plot_callback=None):
+        PeriodicOperator.__init__(self,
+                                  generation_frequency,
+                                  iteration_callback,
+                                  evaluation_frequency,
+                                  evaluation_callback)
         self.column = column
         self.maximize = maximize
         ul = lambda pop: self.update_log(pop)
         self.iteration_callback = ul
         self.evaluation_callback = ul
+        self.best_log = None
+        self.plot_callback = plot_callback
         
     def update_log(self, population):
         best_index = self.get_best_index(population)
         best = population.individuals.loc[best_index]
-        if population.best_log is None:
-            population.best_log = pd.DataFrame(columns=population.individuals.columns)
-        
-        population.best_log.loc[population.evaluation_counter] = best
+        if self.best_log is None:
+            self.best_log = pd.DataFrame(columns=population.individuals.columns)
+        self.best_log.loc[population.evaluation_counter] = best
+        if self.plot_callback:
+            self.plot_callback(self.best_log)
 
     def get_best_index(self, population):
         if self.maximize:

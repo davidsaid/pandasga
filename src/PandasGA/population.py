@@ -9,8 +9,7 @@ class Population(object):
                  individuals=None,
                  generation_size=None, 
                  generation_counter=0, 
-                 evaluation_counter=0,
-                 best_log=None):
+                 evaluation_counter=0):
         self.segments = segments
         self.phenotype = phenotype
         self.generation_counter = generation_counter
@@ -28,8 +27,6 @@ class Population(object):
         else:
             self.individuals = None
             self.randomize(population_size) 
-
-        self.best_log = best_log
             
     def randomize(self, popsize):
 #         column_values = np.column_stack(tuple([np.random.randint(2 ** number_of_bits, size=popsize) for number_of_bits in self.segments.itervalues()]))
@@ -52,8 +49,7 @@ class Population(object):
             'lethal_list: ' + str(self.lethal_list), 
             'survivor_list: ' + str(self.survivor_list), 
             'mating_pool: ' + str(self.mating_pool), 
-            'Individuals:\n' + self.dataframe_to_string(self.individuals, formatters),
-            'Best log:\n' + self.dataframe_to_string(self.best_log, formatters=formatters)])
+            'Individuals:\n' + self.dataframe_to_string(self.individuals, formatters)])
         
     def dataframe_to_string(self, df, formatters=[]):
         if df is None:

@@ -15,7 +15,7 @@ ax1 = plt.subplot2grid((2,2), (0,0), rowspan=1, colspan=1)
 ax2 = plt.subplot2grid((2,2), (0,1), rowspan=1, colspan=1)
 ax3 = plt.subplot2grid((2,2), (1,0), rowspan=1, colspan=2)
 
-def plot_population(population):
+def plot_log(population, logger):
     ax1.cla()
     ax1.plot(Y, Z, 'b-')
     ax1.plot(population.individuals['y'], population.individuals['z'], 'rx')
@@ -37,9 +37,9 @@ def plot_population(population):
     ax2.set_xlim([best_x-0.5*window_size, best_x+0.5*window_size])
     ax2.set_ylim([best_z-0.5*window_size, best_z+0.5*window_size])
     
-    ax3.plot(population.best_log.index, population.best_log['z'], 'k-')
-    ax3.set_title('best found so far')
-    ax3.set_xlabel('evaluations')
+    ax3.plot(logger.best_log['z'], 'k-')
+    ax3.set_title('best found per generation')
+    ax3.set_xlabel('generations')
     ax3.set_ylabel('z')
          
     plt.draw()
@@ -58,7 +58,8 @@ c = pdga.operators.Crossover(crossover_probability=1.0)
 m = pdga.operators.Mutation(mutation_probability=0.5)
 d = pdga.operators.DecodeAndEvaluate()
 l = pdga.operators.LogBest(column='z')
-p = pdga.operators.PeriodicOperator(generation_frequency=1, iteration_callback=plot_population)
+p = pdga.operators.PeriodicOperator(generation_frequency=1,
+                                    iteration_callback=lambda p : plot_log(p, l))
 pop = pdga.population.Population(
           segments=[u, x],
           phenotype=[y, z],
