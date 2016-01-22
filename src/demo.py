@@ -64,7 +64,7 @@ pop = pdga.population.Population(
           segments=[u, x],
           phenotype=[y, z],
           population_size=100,
-          generation_size=50)
+          generation_size=5)
  
 ga = pdga.core.Scheduler(name='test',
                 population=pop,

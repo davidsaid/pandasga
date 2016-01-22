@@ -5,10 +5,13 @@ import math
 import time
 
 n_bits = 24
-y_min = -7*np.pi
+y_min = -2*np.pi
 y_max = 2*np.pi
-t1 = lambda x: math.sin(x)
-t2 = lambda x: math.cos(x)
+t1 = lambda x: math.exp(-0.07*(x)**2)*math.sin(x)
+t2 = lambda x: math.exp(-0.14*(x)**2)*math.cos(x + math.pi/7)
+
+# t1 = lambda x: math.sin(x)
+# t2 = lambda x: math.cos(x)
 
 def z(sh, pd):
     return 1.0*sh + 2.0*pd
@@ -27,9 +30,13 @@ def new_plot_log(logger, ax):
 def plot_log(population):
     i = population.individuals
     
+    pareto_set = i.loc[i['pd'] == 1]
+    dominated_set = i.loc[i['pd'] > 1]
+    
     ax1.cla()
     ax1.plot(F1, F2, 'k-')
-    ax1.plot(i['f1'], i['f2'], 'rx')
+    ax1.plot(dominated_set['f1'], dominated_set['f2'], 'rx')
+    ax1.plot(pareto_set['f1'], pareto_set['f2'], 'bo')
     ax1.set_xlabel('f1')
     ax1.set_xlim([-1.1, 1.1])
     ax1.set_ylabel('f2')
@@ -37,7 +44,8 @@ def plot_log(population):
     
     ax2.cla()
     ax2.plot(F1, F2, 'k-')
-    ax2.plot(i['f1'], i['f2'], 'rx')
+    ax2.plot(dominated_set['f1'], dominated_set['f2'], 'rx')
+    ax2.plot(pareto_set['f1'], pareto_set['f2'], 'bo')
     ax2.set_xlabel('f1')
     ax2.set_xlim([-1.1, 0.1])
     ax2.set_ylabel('f2')
@@ -46,8 +54,10 @@ def plot_log(population):
     ax3.cla()
     ax3.plot(X, F1, 'g-')
     ax3.plot(X, F2, 'b-')
-    ax3.plot(i['y'], i['f1'], 'go')
-    ax3.plot(i['y'], i['f2'], 'bo')
+    ax3.plot(dominated_set['y'], dominated_set['f1'], 'bx')
+    ax3.plot(pareto_set['y'], pareto_set['f1'], 'bo')
+    ax3.plot(dominated_set['y'], dominated_set['f2'], 'gx')
+    ax3.plot(pareto_set['y'], pareto_set['f2'], 'go')
     ax3.set_xlim([y_min, y_max])
     ax3.set_ylim([-1.1, 1.1])
              
@@ -68,8 +78,8 @@ sh = pdga.multimodal.NicheSharingCoefficient(name='sh',
 
 pd = pdga.multiobjective.ParetoDomination(name='pd',
                                           comparator_mapping={
-                                            'f1': pdga.multiobjective.maximize_comparator,
-                                            'f2': pdga.multiobjective.maximize_comparator})
+                                            'f1': pdga.multiobjective.minimize_comparator,
+                                            'f2': pdga.multiobjective.minimize_comparator})
 
 z = pdga.transformations.ColumnFunction(name='z',
                                         columns=['sh', 'pd'],
@@ -87,8 +97,8 @@ p = pdga.operators.PeriodicOperator(generation_frequency=1,
 pop = pdga.population.Population(
           segments=[u, x],
           phenotype=[y, f1, f2, sh, pd, z],
-          population_size=100,
-          generation_size=5)
+          population_size=200,
+          generation_size=10)
  
 ga = pdga.core.Scheduler(name='test',
                 population=pop,
